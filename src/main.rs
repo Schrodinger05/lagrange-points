@@ -1,5 +1,5 @@
 mod lagrange_points;
 
-use lagrange_points::stability;
-
-fn main() {}
+fn main() {
+    lagrange_points::calculate_l2();
+}

@@ -12,7 +12,7 @@ const NONE: f64 = f64::NAN;
 
 pub fn calculate_l1() {
     let initial_guess = Point::create_a_point(-0.12, 0.0);
-    let results = calculation_loop::calculation_loop(
+    let mut results = calculation_loop::calculation_loop(
         &initial_guess,
         0.0001,
         NONE,
@@ -20,13 +20,14 @@ pub fn calculate_l1() {
         Limits::X12,
         false,
     );
+    stability::calculate_stability(&mut results);
 
     print_to_file("l1.txt", results);
 }
 
 pub fn calculate_l2() {
     let initial_guess = Point::create_a_point(0.9, 0.0);
-    let results = calculation_loop::calculation_loop(
+    let mut results = calculation_loop::calculation_loop(
         &initial_guess,
         0.0001,
         NONE,
@@ -34,6 +35,8 @@ pub fn calculate_l2() {
         Limits::X22,
         false,
     );
+    stability::calculate_stability(&mut results);
+
     print_to_file("l2.txt", results);
 }
 
@@ -78,13 +81,16 @@ pub fn calculate_l5() {
 
 fn print_to_file(name: &str, results: Vec<Vals>) {
     let mut file = fs::File::create(name).expect("Couldn't Create File");
-    let out = format!("{:36}{:36}{:36}{:36}{:36}\n", "x", "y", "mu", "d1", "d2");
+    let out = format!(
+        "{:36}{:36}{:36}{:36}{:36}{:36}\n",
+        "x", "y", "mu", "d1", "d2", "stability"
+    );
     file.write_all(out.as_bytes())
         .expect("Couldnt make initial write");
     for result in results {
         let out = format!(
-            "{:.32}  {:.32}  {:.32}  {:.32}  {:.32}\n",
-            result.x, result.y, result.mu, result.d1, result.d2
+            "{:.32}  {:.32}  {:.32}  {:.32}  {:.32}  {}\n",
+            result.x, result.y, result.mu, result.d1, result.d2, result.stability
         );
         file.write_all(out.as_bytes())
             .expect("Could Not Write to file");
