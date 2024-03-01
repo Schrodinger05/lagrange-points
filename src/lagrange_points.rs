@@ -42,7 +42,7 @@ pub fn calculate_l2() {
 
 pub fn calculate_l3() {
     let initial_guess = Point::create_a_point(-0.9, 0.0);
-    let results = calculation_loop::calculation_loop(
+    let mut results = calculation_loop::calculation_loop(
         &initial_guess,
         -0.0001,
         NONE,
@@ -50,12 +50,14 @@ pub fn calculate_l3() {
         Limits::NoLimit,
         false,
     );
+    stability::calculate_stability(&mut results);
+
     print_to_file("l3.txt", results)
 }
 
 pub fn calculate_l4() {
     let initial_guess = Point::create_a_point(0.1, 0.0);
-    let results = calculation_loop::calculation_loop(
+    let mut results = calculation_loop::calculation_loop(
         &initial_guess,
         NONE,
         0.0001,
@@ -63,12 +65,14 @@ pub fn calculate_l4() {
         Limits::Num(0.1),
         true,
     );
+    stability::calculate_stability(&mut results);
+
     print_to_file("l4.txt", results)
 }
 
 pub fn calculate_l5() {
     let initial_guess = Point::create_a_point(0.1, 0.0);
-    let results = calculation_loop::calculation_loop(
+    let mut results = calculation_loop::calculation_loop(
         &initial_guess,
         NONE,
         -0.0001,
@@ -76,6 +80,8 @@ pub fn calculate_l5() {
         Limits::NoLimit,
         true,
     );
+    stability::calculate_stability(&mut results);
+
     print_to_file("l5.txt", results)
 }
 
@@ -83,7 +89,7 @@ fn print_to_file(name: &str, results: Vec<Vals>) {
     let mut file = fs::File::create(name).expect("Couldn't Create File");
     let out = format!(
         "{:36}{:36}{:36}{:36}{:36}{:36}\n",
-        "x", "y", "mu", "d1", "d2", "stability"
+        "x", "y", "mu", "d1", "d2", "is_stable"
     );
     file.write_all(out.as_bytes())
         .expect("Couldnt make initial write");
