@@ -1,11 +1,17 @@
+/*
+
+ This code was based of: https://github.com/NKrvavica/fqs
+
+*/
+
 use num::{
     complex::{Complex64, ComplexFloat},
     zero, FromPrimitive,
 };
 
-pub fn quadratic_roots(a0: f64, b0: f64, c0: f64) -> (Complex64, Complex64) {
-    let a = Complex64::from_f64(b0 / a0).expect("Coulnd't convert to complex");
-    let b = Complex64::from_f64(c0 / a0).expect("Coulnd't convert to complex");
+pub fn quadratic_roots(a0: Complex64, b0: Complex64, c0: Complex64) -> (Complex64, Complex64) {
+    let a = b0.fdiv(a0);
+    let b = c0.fdiv(a0);
 
     let a0 = -0.5 * a;
     let delta = a0 * a0 - b;
@@ -14,14 +20,14 @@ pub fn quadratic_roots(a0: f64, b0: f64, c0: f64) -> (Complex64, Complex64) {
     (a0 - sqrt_delta, a0 + sqrt_delta)
 }
 
-pub fn cubic_root_single(a0: f64, b0: f64, c0: f64, d0: f64) -> Complex64 {
+pub fn cubic_root_single(a0: Complex64, b0: Complex64, c0: Complex64, d0: Complex64) -> Complex64 {
     let mut res: Complex64 = Complex64::new(0.0, 0.0);
 
-    let a = Complex64::from_f64(b0 / a0).expect("Coulnd't convert to complex");
-    let b = Complex64::from_f64(c0 / a0).expect("Coulnd't convert to complex");
-    let c = Complex64::from_f64(d0 / a0).expect("Coulnd't convert to complex");
+    let a = b0.fdiv(a0);
+    let b = c0.fdiv(a0);
+    let c = d0.fdiv(a0);
 
-    let third = 1.0 / 3.0;
+    let third = 1./3.;
     let a13 = a * third;
     let a2 = a13 * a13;
 
@@ -29,26 +35,27 @@ pub fn cubic_root_single(a0: f64, b0: f64, c0: f64, d0: f64) -> Complex64 {
     let g = a13 * (2.0 * a2 - b) + c;
     let h = 0.25 * g * g + f * f * f;
 
-    fn cubic_root(x: Complex64, third: f64) -> Complex64 {
+    fn cubic_root(x: Complex64) -> Complex64 {
         if x.re() >= 0.0 {
-            x.powf(third)
+            x.cbrt()
         } else {
-            -(-x).powf(third)
+            -(-x).cbrt()
         }
     }
 
     if f == g && g == h && h == zero() {
-        res = -cubic_root(c, third);
-    } else if h.re() <= zero() {
+        res = -cubic_root(c);
+
+    } else if h.re() <= zero() || h.im() <= zero() {
         let j = Complex64::sqrt(-f);
-        let k = Complex64::acos(-0.5 * g / (j * j * j));
+        let k = Complex64::acos((-0.5 * g).fdiv(j * j * j));
         let m = Complex64::cos(third * k);
 
         res = 2.0 * j * m - a13;
     } else {
         let sqrt_h = Complex64::sqrt(h);
-        let s = cubic_root(-0.5 * g + sqrt_h, third);
-        let u = cubic_root(-0.5 * g - sqrt_h, third);
+        let s = cubic_root(-0.5 * g + sqrt_h);
+        let u = cubic_root(-0.5 * g - sqrt_h);
         let s_plus_u = s + u;
 
         res = s_plus_u - a13
@@ -58,6 +65,7 @@ pub fn cubic_root_single(a0: f64, b0: f64, c0: f64, d0: f64) -> Complex64 {
 }
 
 pub fn quartic_roots(a0: f64, b0: f64, c0: f64, d0: f64, e0: f64) -> [Complex64; 4] {
+    let one = Complex64::from_f64(1.0).expect("Failed float -> complex conversion");
     let a = Complex64::from_f64(b0 / a0).expect("Coulnd't convert to complex");
     let b = Complex64::from_f64(c0 / a0).expect("Coulnd't convert to complex");
     let c = Complex64::from_f64(d0 / a0).expect("Coulnd't convert to complex");
@@ -71,16 +79,17 @@ pub fn quartic_roots(a0: f64, b0: f64, c0: f64, d0: f64, e0: f64) -> [Complex64;
     let q = a * a02 - b * a0 + 0.5 * c;
     let r = 3.0 * a02 * a02 - b * a02 + c * a0 - d;
 
-    let z0 = cubic_root_single(1.0, p.re(), r.re(), p.re() * r.re() - 0.5 * q.re() * q.re());
-    let s = Complex64::sqrt(2.0 * p + 2.0 * z0 + 0.0);
+    let z0 = cubic_root_single(one, p, r, p * r - 0.5 * q * q);
 
+    let s = Complex64::sqrt(2.0 * p + 2.0 * z0.re() + 0.0);
     if s == zero() {
         t = z0 * z0 + r;
     } else {
-        t = -q / s;
+        t = -q.fdiv(s);
     }
-    let (r0, r1) = quadratic_roots(1.0, s.re(), z0.re() + t.re());
-    let (r2, r3) = quadratic_roots(1.0, -s.re(), z0.re() - t.re());
+
+    let (r0, r1) = quadratic_roots(one, s, z0 + t);
+    let (r2, r3) = quadratic_roots(one, -s, z0 - t);
 
     [(r0 - a0), (r1 - a0), (r2 - a0), (r3 - a0)]
 }
